@@ -3,3 +3,4 @@ obj
 properties
 .vs
 *.sln 
+*.user

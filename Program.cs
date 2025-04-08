@@ -4,13 +4,11 @@
          Console.WriteLine ("Usage: Dirsize <path> [--exclude=bin,obj,*.user] [--unit=KB|MB|GB]");
          return;
       }
-
       string path = args[0];
       string[] excludePatterns = ["bin", "obj", "properties", ".git", ".vscode", ".vs", "TData"]; // Default exclude patterns
       string[] fileFormats = []; // eg: ".cs", ".csproj"
       string unit = "KB";
       bool isVerbose = false;
-
       foreach (var arg in args.Skip (1).Select (x => x.ToLower ())) {
          if (arg.StartsWith ("--exclude=")) {
             excludePatterns = arg.Substring ("--exclude=".Length)
@@ -28,10 +26,10 @@
                unit = "KB";
          } else if (arg.Equals ("--verbose")) isVerbose = true;
       }
-
-      // Handle drive letter input like "C:"
+      // Pre processing file/folder path
       if (path.Length == 2 && path[1] == ':') path += @"\";  // Convert "C:" to "C:\"
-
+      path = path.TrimEnd (Path.DirectorySeparatorChar);
+      // Checks if the path targets file or folder
       if (File.Exists (path)) {
          long size = new FileInfo (path).Length;
          Console.WriteLine ($"{path}\t{FormatSize (size, unit)} {unit}");
@@ -40,7 +38,6 @@
                                 .Prepend (path)
                                 .OrderBy (p => p)
                                 .ToList ();
-
          long total = 0;
          foreach (var folder in folders) {
             long folderSize = GetDirectorySize (folder, fileFormats, excludePatterns);
@@ -49,7 +46,6 @@
                if (isVerbose) Console.WriteLine ($"{folder}\t{FormatSize (folderSize, unit)} {unit}");
             }
          }
-
          Console.WriteLine ($"Total: {FormatSize (total, unit)} {unit}");
       } else {
          Console.WriteLine ("Invalid path.");
@@ -60,7 +56,7 @@
       var files = Directory.EnumerateFiles (folderPath, "*", SearchOption.TopDirectoryOnly)
           .Where (file => {
              // File format inclusions
-             if (!filePatterns.Any (ext => file.EndsWith (ext, StringComparison.OrdinalIgnoreCase))) return false;
+             if (filePatterns.Length > 0 && !filePatterns.Any (ext => file.EndsWith (ext, StringComparison.OrdinalIgnoreCase))) return false;
              // Directory exclusions
              string normalizedPath = file.Replace (Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
              foreach (var pattern in excludePatterns) {
